@@ -1,40 +1,36 @@
 import  express  from 'express'
 import cors from 'cors'
-import ytdl from 'ytdl-core'
-import fs from 'fs'
-import { log } from 'console'
-
-
+import connectDB from './mongodb/connect.js'
+import register from './routes/register.js'
+import login from './routes/login.js'
+import googleLogin from './routes/googleLogin.js'
+import protect from './routes/protected.js'
+import download from './routes/downloadVideo.js'
+import playlist from './routes/playlist.js' 
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 
-app.get('/:videoId', async (req, res) => {
-    const videoId = req.params.videoId;
-    // const videoId = 'Yf0TR7cqHQI';
-    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    const audioStream = ytdl(videoUrl, { 
-        quality: 'highestaudio',
-        filter: 'audioonly'
-    });
 
-    audioStream.on('info', (info) => {
-        console.log(info);
-        res.setHeader('Content-Type', 'audio/mpeg');
-        res.setHeader('Content-Disposition', `attachment; filename="${info.title}"`);
-        audioStream.pipe(res);
-        // audioStream.pipe(fs.createWriteStream("audio.mp3"));
-    });
-    audioStream.on('end', () => {
-        console.log('Download completed.');
-    });
-    audioStream.on('error', (error) => {
-        console.error('Error:', error);
-        res.status(500).send('An error occurred while fetching the audio.');
-    });
-});
+connectDB(process.env.MONGODB_URL)
+app.use('/register',register)
+app.use('/login',login)
+app.use('/google-login',googleLogin)
+app.use('/protect',protect)
+app.use('/download',download)
+app.use('/playlist',playlist)
 
+
+
+
+
+
+const port = process.env.PORT || 5000;
+
+app.listen(port, () => {
+    console.log(`Server is running on port http://localhost:${port}` );
+})
 
 // app.post('/', async (req,res) => {
 //     try {
@@ -57,11 +53,7 @@ app.get('/:videoId', async (req, res) => {
 //         res.status(500).send(error)
 //     }
 // })
-const port = process.env.PORT || 5000;
 
-app.listen(port, () => {
-    console.log(`Server is running on port http://localhost:${port}` );
-})
 
 
 
