@@ -147,5 +147,26 @@ router.route('/listname').get( async (req,res)=>{
   res.status(200).json({success: true, message: '清單名稱獲取成功', listnames: listnames})
 })
 
+router.route('/').delete( async (req,res)=>{
+  try {
+    const {userId, listname} = req.query
+    console.log(req.query);
+    const playlistD = await playlistData.findOne(
+        {userId: userId}
+      )
+    if(playlistD){
+      const index = playlistD.items.findIndex(item => item.listname === listname)
+      playlistD.items.splice(index, 1)
+      await playlistD.save()
+      return res.status(200).json({success: true, message: '清單刪除成功'})
+    }
+
+
+      return res.status(400).json({success: false, message: '清單刪除失敗'})
+
+  } catch (error) {
+    res.status(500).json({message: '內部伺服器處理失敗'})
+  }
+})
 
 export default router
