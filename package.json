@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "server": "nodemon server",
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "node scripts/install-ytdlp.js"
   },
   "keywords": [],
   "author": "",
@@ -18,11 +19,10 @@
     "google-auth-library": "^9.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.1",
-    "nodemon": "^2.0.21",
-    "openai": "^3.2.1",
-    "ytdl-core": "^4.11.5"
+    "nodemon": "^2.0.22",
+    "openai": "^3.2.1"
   },
   "engines": {
-    "node": ">=14.20.1"
+    "node": "22.x"
   }
 }
