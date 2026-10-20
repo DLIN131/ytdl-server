@@ -25,15 +25,10 @@ const prepareCookies = async () => {
     return copy;
 }
 
-// Make sure the binary exists, then self-update it: YouTube changes often and
-// an outdated yt-dlp is the usual reason downloads start failing.
+// Make sure the binary exists. postinstall downloads the latest release on every
+// build; `yt-dlp -U` is not used because it hits GitHub's API rate limit on Render.
 const ready = (async () => {
     const binPath = await installYtdlp();
-    await new Promise((resolve) => {
-        const update = spawn(binPath, ['-U'], { stdio: 'inherit' });
-        update.on('error', resolve);
-        update.on('close', resolve);
-    });
     return { binPath, cookiesPath: await prepareCookies() };
 })();
 ready.catch((err) => console.error('yt-dlp setup failed:', err));
@@ -63,6 +58,10 @@ router.route('/:videoId').get(async (req, res) => {
         '--print', `before_dl:${META_PREFIX}%(.{title,ext,filesize})j`,
     ];
     if (cookiesPath) args.push('--cookies', cookiesPath);
+    // Optional extra yt-dlp flags, e.g. YT_PROXY=http://user:pass@host:port or
+    // YTDLP_ARGS="--verbose" (whitespace-separated, no quoting)
+    if (process.env.YT_PROXY) args.push('--proxy', process.env.YT_PROXY);
+    if (process.env.YTDLP_ARGS) args.push(...process.env.YTDLP_ARGS.trim().split(/\s+/));
     args.push(videoUrl);
     const subprocess = spawn(binPath, args);
 
