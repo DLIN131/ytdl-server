@@ -1,5 +1,5 @@
 import { spawn } from 'child_process'
-import { copyFile } from 'fs/promises'
+import { copyFile, readdir } from 'fs/promises'
 import os from 'os'
 import path from 'path'
 import express from 'express'
@@ -17,12 +17,23 @@ const META_PREFIX = '__META__';
 
 // Optional: path to a Netscape-format cookies.txt (e.g. a Render secret file at
 // /etc/secrets/cookies.txt) for when YouTube asks the server to sign in.
-// yt-dlp writes cookies back, so it gets a writable copy.
+// yt-dlp writes cookies back, so it gets a writable copy. A missing file only
+// disables cookies instead of breaking downloads.
 const prepareCookies = async () => {
-    if (!process.env.YT_COOKIES_FILE) return null;
+    const source = process.env.YT_COOKIES_FILE;
+    if (!source) return null;
     const copy = path.join(os.tmpdir(), 'yt-cookies.txt');
-    await copyFile(process.env.YT_COOKIES_FILE, copy);
-    return copy;
+    try {
+        await copyFile(source, copy);
+        console.log(`Using YouTube cookies from ${source}`);
+        return copy;
+    } catch (error) {
+        const dir = path.dirname(source);
+        const found = await readdir(dir).catch(() => null);
+        console.warn(`YT_COOKIES_FILE ${source} could not be read (${error.code}); continuing without cookies. ` +
+            `Files in ${dir}: ${found ? JSON.stringify(found) : '(directory not found)'}`);
+        return null;
+    }
 }
 
 // Make sure the binary exists. postinstall downloads the latest release on every
