@@ -61,7 +61,9 @@ router.route('/:videoId').get(async (req, res) => {
     }
 
     const args = [
-        '--format', 'bestaudio[ext=m4a]/bestaudio',
+        // some clients (e.g. on Render's IPs) only offer muxed video+audio; fall back
+        // to the smallest reasonable one of those, since only the audio is wanted
+        '--format', 'bestaudio[ext=m4a]/bestaudio/best[acodec!=none][height<=480]/best[acodec!=none]',
         '--output', '-',
         '--quiet', '--no-warnings', '--no-playlist', '--no-simulate',
         // yt-dlp needs a JS runtime to solve YouTube's challenges; use this Node
@@ -91,7 +93,8 @@ router.route('/:videoId').get(async (req, res) => {
         const filename = `${title}.${ext}`;
         const asciiFilename = filename.replace(/[^\x20-\x7e]/g, '_');
 
-        res.setHeader('Content-Type', ext === 'm4a' ? 'audio/mp4' : `audio/${ext}`);
+        const contentTypes = { m4a: 'audio/mp4', mp4: 'video/mp4', webm: 'audio/webm' };
+        res.setHeader('Content-Type', contentTypes[ext] || 'application/octet-stream');
         if (meta.filesize) res.setHeader('Content-Length', meta.filesize);
         res.setHeader('Content-Disposition',
             `attachment; filename="${asciiFilename}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
